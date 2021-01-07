@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+/**
+   Copyright (c) 2016 - 2020 Beckhoff Automation GmbH & Co. KG
+ */
+
 #include "AdsDevice.h"
 #include "AdsException.h"
 #include "AdsLib.h"
@@ -23,6 +28,11 @@ long AdsDevice::DeleteNotificationHandle(uint32_t handle) const
         return AdsSyncDelDeviceNotificationReqEx(GetLocalPort(), &m_Addr, handle);
     }
     return 0;
+}
+
+long AdsDevice::CloseFile(uint32_t handle) const
+{
+    return ReadWriteReqEx2(SYSTEMSERVICE_FCLOSE, handle, 0, nullptr, 0, nullptr, nullptr);
 }
 
 long AdsDevice::DeleteSymbolHandle(uint32_t handle) const
@@ -95,19 +105,22 @@ long AdsDevice::GetLocalPort() const
 
 AdsDeviceState AdsDevice::GetState() const
 {
-    AdsDeviceState state;
-    static_assert(sizeof(state.ads) == sizeof(uint16_t), "size missmatch");
-    static_assert(sizeof(state.device) == sizeof(uint16_t), "size missmatch");
+    uint16_t state[2];
     auto error = AdsSyncReadStateReqEx(GetLocalPort(),
                                        &m_Addr,
-                                       (uint16_t*)&state.ads,
-                                       (uint16_t*)&state.device);
+                                       &state[0],
+                                       &state[1]);
 
     if (error) {
         throw AdsException(error);
     }
 
-    return state;
+    for (auto i: state) {
+        if (i >= ADSSTATE::ADSSTATE_MAXSTATES) {
+            throw std::out_of_range("Unknown ADSSTATE(" + std::to_string(i) + ')');
+        }
+    }
+    return {static_cast<ADSSTATE>(state[0]), static_cast<ADSSTATE>(state[1])};
 }
 
 void AdsDevice::SetState(const ADSSTATE AdsState, const ADSSTATE DeviceState) const
@@ -139,6 +152,24 @@ uint32_t AdsDevice::GetTimeout() const
         throw AdsException(error);
     }
     return timeout;
+}
+
+AdsHandle AdsDevice::OpenFile(const std::string& filename, const uint32_t flags) const
+{
+    uint32_t bytesRead = 0;
+    uint32_t handle;
+    const auto error = ReadWriteReqEx2(SYSTEMSERVICE_FOPEN,
+                                       flags,
+                                       sizeof(handle),
+                                       &handle,
+                                       filename.length(),
+                                       filename.c_str(),
+                                       &bytesRead);
+
+    if (error) {
+        throw AdsException(error);
+    }
+    return {new uint32_t {handle}, {std::bind(&AdsDevice::CloseFile, this, std::placeholders::_1)}};
 }
 
 long AdsDevice::ReadReqEx2(uint32_t group, uint32_t offset, uint32_t length, void* buffer, uint32_t* bytesRead) const

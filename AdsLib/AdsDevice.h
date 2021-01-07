@@ -1,9 +1,30 @@
+// SPDX-License-Identifier: MIT
+/**
+   Copyright (c) 2016 - 2020 Beckhoff Automation GmbH & Co. KG
+ */
+
 #pragma once
 #include "AdsException.h"
 #include "AdsDef.h"
 #include <cstdint>
 #include <functional>
 #include <memory>
+
+/**
+ * @brief Maximum size for device name.
+ */
+static const size_t DEVICE_NAME_LENGTH = 16;
+
+/**
+ * @brief Device information containing device name and version.
+ */
+struct DeviceInfo {
+    /** Device name */
+    char name[DEVICE_NAME_LENGTH];
+
+    /** Device version as defined above */
+    AdsVersion version;
+};
 
 struct AdsDeviceState {
     ADSSTATE ads;
@@ -47,6 +68,9 @@ struct AdsDevice {
                         PAdsNotificationFuncEx       callback,
                         uint32_t                     hUser) const;
 
+    /** Get handle to access files */
+    AdsHandle OpenFile(const std::string& filename, uint32_t flags) const;
+
     long GetLocalPort() const;
 
     AdsDeviceState GetState() const;
@@ -69,6 +93,7 @@ struct AdsDevice {
     const AmsAddr m_Addr;
 private:
     AdsResource<const long> m_LocalPort;
+    long CloseFile(uint32_t handle) const;
     long DeleteNotificationHandle(uint32_t handle) const;
     long DeleteSymbolHandle(uint32_t handle) const;
 };

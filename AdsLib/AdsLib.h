@@ -1,74 +1,14 @@
-/** @file
-   Copyright (c) 2015 - 2016 Beckhoff Automation GmbH & Co. KG
-
-   Permission is hereby granted, free of charge, to any person obtaining a copy
-   of this software and associated documentation files (the "Software"), to deal
-   in the Software without restriction, including without limitation the rights
-   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-   copies of the Software, and to permit persons to whom the Software is
-   furnished to do so, subject to the following conditions:
-
-   The above copyright notice and this permission notice shall be included in
-   all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-   SOFTWARE.
- */
-
-#ifndef _ADSLIB_H_
-#define _ADSLIB_H_
-
-#include "AdsDef.h"
-
+// SPDX-License-Identifier: MIT
 /**
- * Add new ams route to target system
- * @param[in] ams address of the target system
- * @param[in] ip address of the target system
- * @return [ADS Return Code](http://infosys.beckhoff.de/content/1033/tc3_adsdll2/html/ads_returncodes.htm?id=17663)
+   Copyright (c) 2020 Beckhoff Automation GmbH & Co. KG
  */
-long AdsAddRoute(AmsNetId ams, const char* ip);
+#pragma once
 
-/**
- * Delete ams route that had previously been added with AdsAddRoute().
- * @param[in] ams address of the target system
- */
-void AdsDelRoute(AmsNetId ams);
-
-/**
- * The connection (communication port) to the message router is
- * closed. The port to be closed must previously have been opened via
- * an AdsPortOpenEx() call.
- * @param[in] port port number of an Ads port that had previously been opened with AdsPortOpenEx().
- * @return [ADS Return Code](http://infosys.beckhoff.de/content/1033/tc3_adsdll2/html/ads_returncodes.htm?id=17663)
- */
-long AdsPortCloseEx(long port);
-
-/**
- * Establishes a connection (communication port) to the message
- * router. The port number returned by AdsPortOpenEx() is required as
- * parameter for further AdsLib function calls.
- * @return port number of a new Ads port or 0 if no more ports available
- */
-long AdsPortOpenEx();
-
-/**
- * Returns the local NetId and port number.
- * @param[in] port port number of an Ads port that had previously been opened with AdsPortOpenEx().
- * @param[out] pAddr Pointer to the structure of type AmsAddr.
- * @return [ADS Return Code](http://infosys.beckhoff.de/content/1033/tc3_adsdll2/html/ads_returncodes.htm?id=17663)
- */
-long AdsGetLocalAddressEx(long port, AmsAddr* pAddr);
-
-/**
- * Change local NetId
- * @param[in] ams local AmsNetId
- */
-void AdsSetLocalAddress(AmsNetId ams);
+#if defined(USE_TWINCAT_ROUTER)
+#include "TwinCAT/AdsLib.h"
+#else
+#include "standalone/AdsLib.h"
+#endif
 
 /**
  * Reads data synchronously from an ADS server.
@@ -205,13 +145,3 @@ long AdsSyncDelDeviceNotificationReqEx(long port, const AmsAddr* pAddr, uint32_t
  * @return [ADS Return Code](http://infosys.beckhoff.de/content/1033/tc3_adsdll2/html/ads_returncodes.htm?id=17663)
  */
 long AdsSyncGetTimeoutEx(long port, uint32_t* timeout);
-
-/**
- * Alters the timeout for the ADS functions. The standard value is 5000 ms.
- * @param[in] port port number of an Ads port that had previously been opened with AdsPortOpenEx().
- * @param[in] timeout Timeout in ms.
- * @return [ADS Return Code](http://infosys.beckhoff.de/content/1033/tc3_adsdll2/html/ads_returncodes.htm?id=17663)
- */
-long AdsSyncSetTimeoutEx(long port, uint32_t timeout);
-
-#endif /* #ifndef _ADSLIB_H_ */
